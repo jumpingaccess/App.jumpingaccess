@@ -1,0 +1,19 @@
+<%= form_with model: [:admin, @api_credential], local: true do |f| %>
+  <div class="mb-3">
+    <%= f.label :name, "Nom de l'API" %>
+    <%= f.text_field :name, class: "form-control" %>
+  </div>
+  <div class="mb-3">
+    <%= f.label :auth_type, "Type d'authentification" %>
+    <%= f.select :auth_type, [["x-api-key", "x-api-key"], ["bearer", "bearer"]], {}, class: "form-select" %>
+  </div>
+  <div class="mb-3">
+    <%= f.label :api_key, "Clé/API Token" %>
+    <%= f.text_field :api_key, class: "form-control" %>
+  </div>
+  <div class="mb-3">
+    <%= f.label :base_url, "URL de base" %>
+    <%= f.text_field :base_url, class: "form-control" %>
+  </div>
+  <%= f.submit class: "btn btn-success" %>
+<% end %>

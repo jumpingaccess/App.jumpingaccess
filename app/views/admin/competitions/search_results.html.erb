@@ -1,0 +1,13 @@
+<h2>Résultats de la recherche "<%= @query %>"</h2>
+
+<% if @competitions.any? %>
+  <ul class="list-group">
+    <% @competitions.each do |comp| %>
+      <li class="list-group-item">
+        <%= link_to comp.name, admin_competition_path(comp) %>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>Aucun concours trouvé.</p>
+<% end %>

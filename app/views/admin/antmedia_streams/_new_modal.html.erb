@@ -1,0 +1,21 @@
+<div class="modal fade" id="newModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+<%= form_with model: antmedia_stream,
+              url: antmedia_create_admin_meeting_path(@meeting),
+              local: true do |f| %>
+
+        <div class="modal-header">
+          <h5 class="modal-title">Créer un stream</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <%= render "form", f: f %>
+        </div>
+        <div class="modal-footer">
+          <%= f.submit "Créer", class: "btn btn-success" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

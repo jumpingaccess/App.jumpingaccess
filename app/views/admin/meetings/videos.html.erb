@@ -1,0 +1,156 @@
+<h3 class="mb-3">Gestion des flux vidéos</h3>
+
+<div class="row">
+  <% @pistes.each_with_index do |piste, index| %>
+    <div class="col-md-6">
+      <div class="card-3d mb-4 shadow-sm"
+           data-controller="castr"
+           data-meeting-id="<%= @meeting.id %>"
+           data-provider-id="<%= @meeting.provider_competition_id %>">
+       <div class="card-header text-white d-flex justify-content-between align-items-center py-2 px-2" style="background: #3d3b3b;">
+          <strong>Arena: <%= piste[:label] || "Piste #{index + 1}" %> - Show ID: <%= @meeting.provider_competition_id %></strong>
+        </div>
+
+        <div class="card-body">
+          <%= form_with url: start_stream_admin_meeting_path(@meeting), method: :post, local: true do |f| %>
+            <div class="mb-2">
+              <%= f.label :competition_id, "Épreuve", class: "form-label px-2" %>
+              <%= f.collection_select :competition_id, @show_competitions, :class_ID, :class_name,
+                  {}, class: "form-select text-truncate w-100 limit-width",
+                  data: {
+                    role: "select-epreuve"
+                  } %>
+            </div>
+
+            <div class="row g-2">
+              <div class="col-6">
+                <%= f.label :stream_url, "Stream", class: "form-label px-2" %>
+                <%= f.select :stream_url,
+                      options_for_select(@castr_streams["docs"].map { |s| [s["name"], s["_id"]] }),
+                      { prompt: "Stream..." },
+                      class: "form-select",
+                      data: { castr_target: "streams" } %>
+              </div>
+
+              <div class="col-6">
+                <%= f.label :endpoint_url, "Endpoint", class: "form-label px-2 " %>
+                <%= f.select :endpoint_url,
+                      [], { prompt: "Endpoint..." },
+                      class: "form-select",
+                      data: { castr_target: "endpoint" } %>
+              </div>
+            </div>
+          <% end %>
+
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-success btn-sm w-50" data-action="castr#start" data-show-id="<%= @meeting.id %>">
+              <i class="fas fa-play me-1"></i> Lancer le record
+            </button>
+
+            <button class="btn btn-danger btn-sm w-50" data-action="castr#stop" data-show-id="<%= @meeting.id %>">
+              <i class="fas fa-stop me-1"></i> Stopper le record
+            </button>
+          </div>
+
+          <!-- Bloc d'importation unifié -->
+          <div class="border d-flex text-center">
+            <div class="w-100" style="flex: 1">
+              <%= form_with url: admin_meeting_starts_path(@meeting), method: :post, local: true,
+                            data: { controller: "startlist", action: "submit->startlist#submit" },
+                            html: { id: "startlist-form-#{index}" } do %>
+
+                <%= hidden_field_tag :class_id, "", data: { startlist_target: "classId" } %>
+                <%= hidden_field_tag :meeting_id, @meeting.id %>
+
+                <button type="submit"
+                        class="btn text-dark border-end tab-link py-2 w-100 text-nowrap"
+                        data-startlist-target="importButton"
+                        data-meeting-id="<%= @meeting.id %>"
+                        data-provider-id="<%= @meeting.provider_competition_id %>"
+                        data-startlist-index="<%= index %>"
+                        data-index="<%= index %>">
+                  <i class="fas fa-download me-1"></i> Liste de départs
+                </button>
+              <% end %>
+            </div>
+
+            <div class="w-100" style="flex: 1">
+              <button type="button" class="btn text-dark border-end tab-link py-2 w-100 text-nowrap">
+                <i class="fas fa-bolt me-1"></i> Incidents
+              </button>
+            </div>
+
+            <div class="w-100" style="flex: 1">
+              <%= form_with url: admin_meeting_results_path(@meeting), method: :post, local: true,
+                            html: { id: "results-form-#{index}" } do %>
+
+                <%= hidden_field_tag :class_id, "", id: "result-class-id-#{index}" %>
+                <%= hidden_field_tag :meeting_id, @meeting.id %>
+
+                <button type="submit"
+                        class="btn text-dark tab-link py-2 w-100 text-nowrap"
+                        data-results-target="importButton"
+                        data-meeting-id="<%= @meeting.id %>"
+                        data-provider-id="<%= @meeting.provider_competition_id %>"
+                        data-class-select-id="select-epreuve-<%= index %>"
+                        data-results-index="<%= index %>">
+                  <i class="fas fa-flag-checkered me-1"></i> Résultats
+                </button>
+              <% end %>
+            </div>
+          </div>
+
+          
+          <div class="input-group input-group mt-2">
+            <span class="input-group-text bg-light me-2" id="status-startlist-<%= index %>">
+              <i class="fas fa-list"></i>
+            </span>
+            <div class="form-control bg-white text-start" id="startlist-status-<%= index %>" style="font-size: 0.85rem;">
+              <span class="text-muted">En attente...</span>
+            </div>
+          </div>
+
+          <div class="input-group input-group mt-2">
+            <span class="input-group-text bg-light me-2" id="status-results-<%= index %>">
+              <i class="fas fa-flag-checkered"></i>
+            </span>
+            <div class="form-control bg-white text-start" id="results-status-<%= index %>" style="font-size: 0.85rem;">
+              <span class="text-muted">En attente...</span>
+            </div>
+          </div>
+
+          <div class="input-group input-group mt-2 ">
+            <span class="input-group-text bg-light me-2" id="status-incidents-<%= index %>">
+              <i class="fas fa-bolt"></i>
+            </span>
+            <div class="form-control bg-white text-start" id="incident-status-<%= index %>" style="font-size: 0.85rem;">
+              <span class="text-muted">En attente...</span>
+            </div>
+          </div>
+
+          <div class="mt-3 monitoring border-top pt-3 px-2 ">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="text-muted fw-semibold ">État du stream</span>
+              <span class="badge bg-secondary status-badge ">Inactif</span>
+            </div>
+            <hr>
+            <div class="text-muted mb-2">
+              <i class="fas fa-clock me-1"></i>
+              <span class="last-event">Dernier événement : -</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header d-flex text-white justify-content-between align-items-center" style="background: #3d3b3b;">
+    <strong> <i class="fas fa-video me-2"></i> Streams Castr actifs</strong>
+    <button class="btn btn-primary btn-sm" data-action="castr#refresh">Actualiser</button>
+  </div>
+  <div class="card-body" id="castr-streams">
+    <p class="text-muted">Chargement des streams...</p>
+  </div>
+</div>

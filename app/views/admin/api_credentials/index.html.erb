@@ -1,0 +1,29 @@
+<h2>Clés API & Endpoints</h2>
+
+<%= link_to "Ajouter une clé", new_admin_api_credential_path, class: "btn btn-primary mb-3" %>
+
+<table class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>Nom</th>
+      <th>Type d'auth</th>
+      <th>Clé/API Token</th>
+      <th>URL</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @api_credentials.each do |cred| %>
+      <tr>
+        <td><%= cred.name %></td>
+        <td><%= cred.auth_type %></td>
+        <td><%= truncate(cred.api_key, length: 20) %></td>
+        <td><%= cred.base_url %></td>
+        <td>
+          <%= link_to "✏️", edit_admin_api_credential_path(cred), class: "btn btn-sm btn-outline-secondary" %>
+          <%= link_to "🗑️", admin_api_credential_path(cred), method: :delete, data: { confirm: "Supprimer cette clé ?" }, class: "btn btn-sm btn-outline-danger" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

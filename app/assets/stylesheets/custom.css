@@ -1,0 +1,222 @@
+@charset "UTF-8";
+
+/* === Base === */
+body {
+    font-family: 'Lato', system-ui, sans-serif;
+    background-color: #f5f6fa;
+}
+
+/* === Topbar === */
+.topbar {
+    background-color: #3d3b3b;
+    height: 56px;
+    color: white;
+}
+
+/* === Flash auto-dismiss === */
+.auto-dismiss {
+    transition: opacity 0.3s ease-out;
+}
+
+.auto-dismiss.show {
+    opacity: 1;
+}
+
+.auto-dismiss:not(.show) {
+    opacity: 0;
+}
+
+/* === Sidebar === */
+.sidebar {
+    width: 150px;
+    background-color: #3d3b3b;
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    color: white;
+}
+
+.sidebar-nav {
+    width: 100%;
+    padding-top: 1rem;
+}
+
+.sidebar-nav .nav-item {
+    width: 100%;
+}
+
+.sidebar-nav .nav-link,
+.sidebar-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-decoration: none;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.sidebar-nav .nav-link {
+    height: 60px;
+    padding: 0.5rem;
+}
+
+.sidebar-link {
+    width: 100%;
+    height: 80px;
+    padding: 0.5rem;
+}
+
+.sidebar-nav .nav-link:hover,
+.sidebar-nav .nav-link.active,
+.sidebar-link:hover,
+.sidebar-link.active {
+    background-color: #4a4e78;
+    color: white;
+}
+
+/* === Dropdown (style Equipe) === */
+.dropdown-menu {
+    min-width: 240px;
+    font-size: 14px;
+    border-radius: 0;
+    border: none;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+    padding: 0;
+}
+
+.dropdown-item {
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background-color: #f5f5f5;
+}
+
+.dropdown-submenu .dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-left: -1px;
+}
+
+.shortcut {
+    color: #6d6d6d;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+/* === Autocomplete === */
+#competition-search {
+    background-color: #464a5f;
+    border-radius: 6px;
+    padding: 0.45rem 0.75rem;
+}
+
+#competition-search::placeholder {
+    color: #ccc;
+    opacity: 1;
+}
+
+.input-group-text {
+    background-color: #464a5f;
+    border: none;
+    padding-left: 0.75rem;
+}
+
+#competition-results {
+    background-color: #2c2f3e;
+    border: 1px solid #ddd;
+    border-radius: 0.4rem;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1050;
+    /* au-dessus de la navbar */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.autocomplete-item {
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.active {
+    background-color: #3d4255;
+}
+
+#competition-results .text-muted {
+    color: #bbb !important;
+}
+
+#competition-results .text-white {
+    color: white;
+}
+
+/* === Tabs + Modal === */
+.modal-body {
+    background-color: #fffdfde8;
+}
+
+.nav-tabs .nav-link {
+    color: #000 !important;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #f8f9fa;
+    border-color: #dee2e6 #dee2e6 #fff;
+    color: #000 !important;
+}
+
+/* === Formulaires === */
+label {
+    font-weight: bold;
+}
+
+/* === Utilities === */
+.mb-6 {
+    margin-bottom: 3rem !important;
+}
+
+/* --- Tab Link ---*/
+.tab-link {
+  color: #112244;
+  background-color: #fff;
+  border-right: 1px solid #dee2e6;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.tab-link:last-child {
+  border-right: none;
+}
+
+.tab-link:hover {
+  background-color: #cacbcc;
+  text-decoration: none;
+}
+
+.tab-link.active {
+  background-color: #bdced8;
+  font-weight: 600;
+}
+.card-3d {
+  border: 1px solid #c6cbcf;
+  border-radius: 1rem;
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.card-3d:hover {
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.limit-width {
+    max-width: 100%;
+    display: block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}

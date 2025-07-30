@@ -1,0 +1,7 @@
+{
+  "name": "app",
+  "private": "true",
+"scripts": {
+  "build:css": "echo 'Bootstrap only – no Tailwind build needed'"
+}
+}

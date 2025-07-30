@@ -1,0 +1,108 @@
+<% if @competitions.any? %>
+  <div class="row row-cols-1 row-cols-md-2 g-4">
+    <% @competitions.each do |comp| %>
+      <div class="col">
+        <%= link_to admin_meeting_path(comp.id), class: "card-link", style: " text-decoration: none;" do %>
+          <div class="card mb-4 shadow-sm">
+            <div class="card-body p-3 d-flex justify-content-between align-items-start">
+              <div class="d-flex">
+                <% if comp.logo.attached? %>
+                  <div class="me-3">
+                    <%= image_tag comp.logo.variant(resize_to_fit: [64, 64]).processed, class: "img-fluid", alt: "Logo" %>
+                  </div>
+                <% end %>
+
+                <div>
+                  <h5 class="mb-1 text-dark"><%= comp.name %></h5>
+                  <div class="text-muted small"><%= comp.location %> - 
+                  <% country_code = comp.country.to_s.downcase %>
+                  <%= image_tag "https://hatscripts.github.io/circle-flags/flags/#{country_code}.svg", alt: country_code.upcase, class: "me-1", height: 15 %>
+                  </div>
+                  <div class="text-muted small"><%= l(comp.start_date) %> - <%= l(comp.end_date) %></div>
+                  <% label = comp.provider.to_s.titleize %>
+                  <% image = case comp.provider
+                            when 'equipe' then 'equipe.png'
+                            when 'hippodata' then 'hippo-data.png'
+                            else nil
+                            end %>
+
+                  <div class="text-muted small d-flex align-items-center">
+                  <span class="me-2">Data provider: </span>
+                    <% if image %>
+                      <%= image_tag(image, alt: label, height: 20, class: "me-2") %>
+                    <% end %>
+                    - Show Id: <%= comp.provider_competition_id %>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <%= link_to "#", class: "text-secondary", data: { bs_toggle: "modal", bs_target: "#editCompetitionModal-#{comp.id}" }, title: "Modifier le concours" do %>
+                  <i class="fas fa-cog"></i>
+                <% end %>
+              </div>
+            </div>
+
+            <div style="height: 3px; background-color: #28a745;"></div> <!-- fine green line -->
+          </div>
+          
+        <% end %>
+
+        <!-- Modal d'édition -->
+        <div class="modal fade" id="editCompetitionModal-<%= comp.id %>" tabindex="-1" aria-labelledby="editModalLabel-<%= comp.id %>" aria-hidden="true">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel-<%= comp.id %>">Modifier : <%= comp.name %></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+              </div>
+              <div class="modal-body">
+                <%= render "admin/competitions/form", competition: comp %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    <% end %>
+
+  </div>
+
+  <!-- Pagination -->
+  <% unless @competitions.total_pages <= 1 %>
+    <div class="d-flex justify-content-between align-items-center mt-4">
+      <% if !@competitions.first_page? %>
+        <%= link_to "← Précédent", url_for(page: @competitions.prev_page), class: "btn btn-outline-secondary" %>
+      <% else %>
+        <span></span>
+      <% end %>
+
+      <% if !@competitions.last_page? %>
+        <%= link_to "Suivant →", url_for(page: @competitions.next_page), class: "btn btn-outline-secondary" %>
+      <% else %>
+        <span></span>
+      <% end %>
+    </div>
+  <% end %>
+
+<% else %>
+  <div class="alert alert-info">Aucun concours disponible pour le moment.</div>
+<% end %>
+<script>
+    document.addEventListener("turbo:submit-end", function(event) {
+        const modal = event.target.closest(".modal");
+        if (!modal) return;
+
+        const success = event.detail.success;
+
+        if (success) {
+            const bsModal = bootstrap.Modal.getInstance(modal);
+            if (bsModal) bsModal.hide();
+
+            // Laisse un petit délai pour que l'animation de fermeture se fasse
+            setTimeout(() => {
+                window.location.href = "/admin/dashboard";
+            }, 400);
+        }
+    })
+</script>

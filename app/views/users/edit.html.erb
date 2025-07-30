@@ -1,0 +1,29 @@
+<div class="container mt-4" style="max-width: 600px;">
+  <h2 class="mb-4">Éditer mon profil</h2>
+
+  <%= form_with model: @user, local: true do |f| %>
+    <div class="mb-3">
+      <%= f.label :email, class: "form-label" %>
+      <%= f.email_field :email, class: "form-control" %>
+    </div>
+
+    <div class="mb-3">
+      <%= f.label :password, "Nouveau mot de passe", class: "form-label" %>
+      <%= f.password_field :password, class: "form-control" %>
+    </div>
+
+    <div class="mb-3">
+      <%= f.label :password_confirmation, class: "form-label" %>
+      <%= f.password_field :password_confirmation, class: "form-control" %>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Rôle</label>
+        <input type="text"
+                class="form-control"
+                value="<%= current_user.role.titleize %>"
+                readonly
+                disabled>
+    </div>
+    <%= f.submit "Mettre à jour", class: "btn btn-primary" %>
+  <% end %>
+</div>

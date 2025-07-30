@@ -1,0 +1,21 @@
+<div class="modal fade" id="editModal-<%= antmedia_stream.id %>" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <%= form_with model: antmedia_stream,
+              url: antmedia_update_admin_meeting_path(@meeting, stream_id: antmedia_stream.id),
+              method: :patch,
+              local: true do |f| %>
+        <div class="modal-header">
+          <h5 class="modal-title">Modifier <%= antmedia_stream.stream_name %></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <%= render "form", f: f %>
+        </div>
+        <div class="modal-footer">
+          <%= f.submit "Enregistrer", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

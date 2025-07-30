@@ -1,0 +1,30 @@
+<% if streams.any? %>
+  <ul class="list-group">
+    <% streams.each do |stream| %>
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        🎥 <strong>
+          Show <%= stream.Equipe_show_ID %> — Épreuve <%= stream.Equipe_class_ID %>
+          <% if stream.class_name %>
+            : <%= stream.class_name %>
+          <% end %>
+          <% if stream.arena %>
+            (Piste : <%= stream.arena %>)
+          <% end %>
+        </strong>
+
+        <button class="btn btn-danger btn-sm"
+                data-action="castr#stop"
+                data-stream-id="<%= stream.stream_id %>"
+                data-platform-id="<%= stream.platform_id %>"
+                data-show-id="<%= stream.Equipe_show_ID %>"
+                data-class-id="<%= stream.Equipe_class_ID %>">
+                
+          Arrêter
+        </button>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="text-muted">Aucun stream en cours.</p>
+<% end %>
+

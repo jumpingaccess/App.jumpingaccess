@@ -1,0 +1,206 @@
+<div class="card mb-4 shadow-sm">
+  <div class="card-body px-4 py-3">
+    <div class="d-flex align-items-center">
+      
+      <% if @concours.logo.attached? %>
+        <div class="me-4">
+          <%= image_tag @concours.logo.variant(resize_to_fit: [120, 120]).processed, class: "img-fluid rounded", alt: "Logo" %>
+        </div>
+      <% end %>
+
+      <div class="flex-grow-1">
+        <h4 class="mb-1 fw-semibold"><%= @concours.name %></h4>
+        
+        <div class="text-muted small mb-1">
+          <i class="far fa-calendar-alt me-1"></i>
+          <%= l(@concours.start_date) %> – <%= l(@concours.end_date) %>
+        </div>
+
+        <div class="text-muted small mb-2 d-flex align-items-center">
+          <% country_code = @concours.country.to_s.downcase %>
+          <%= image_tag "https://hatscripts.github.io/circle-flags/flags/#{country_code}.svg", alt: country_code.upcase, class: "me-2", height: 20 %>
+          <%= @concours.location %>
+        </div>
+
+      <% if @concours.provider.present? %>
+        <% label = @concours.provider.to_s.titleize %>
+        <% image = case @concours.provider
+                  when 'equipe' then 'equipe.png'
+                  when 'hippodata' then 'hippo-data.png'
+                  else nil
+                  end %>
+
+        <div class="text-muted small d-flex align-items-center">
+          <i class="fas fa-stopwatch fa-xl me-2"></i>
+          <span class="me-2">Chronométrage :</span>
+          <% if image %>
+            <%= image_tag(image, alt: label, height: 20, class: "me-2") %>
+          <% end %>
+          <%= label %> / Show ID: <%= @concours.provider_competition_id %> 
+
+        </div>
+
+      <% end %>
+      <!-- Résumé épreuves / chevaux -->
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-body pb-2">
+              <h5 class="card-title text-success">
+                <i class="fas fa-list me-2"></i>Total des épreuves importées
+              </h5>
+              <% total_classes = ShowCompetition.where(show_ID: @concours.provider_competition_id).count %>
+              <p class="card-text fw-bold"><%= total_classes %> épreuve(s)</p>
+            </div>
+
+            <!-- Boutons plats -->
+            <div class="border-top d-flex">
+              <%= link_to "#modalClasses", class: "flex-fill text-center py-2 text-decoration-none text-dark border-end tab-link", data: { bs_toggle: "modal" } do %>
+                <i class="fas fa-eye me-1"></i> Voir la liste
+              <% end %>
+
+              <%= button_to admin_delete_import_path(type: 'classes', id: @concours.id),
+                            method: :delete,
+                            form_class: "flex-fill tab-link",
+                            data: { turbo_confirm: "Supprimer toutes les épreuves importées ?" },
+                            class: "btn text-center w-100 border-0 py-2 bg-transparent" do %>
+                <i class="fas fa-trash me-1"></i> Supprimer
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-body pb-2">
+              <h5 class="card-title text-success">
+                <i class="fas fa-horse me-2"></i>Total des chevaux importés
+              </h5>
+              <% total_horses = ShowHorse.where(Equipe_Show_ID: @concours.provider_competition_id).count %>
+              <p class="card-text fw-bold"><%= total_horses %> chevaux</p>
+            </div>
+
+            <!-- Boutons plats -->
+            <div class="border-top d-flex">
+              <%= link_to "#modalHorses", class: "flex-fill text-center py-2 text-decoration-none text-dark border-end tab-link", data: { bs_toggle: "modal" } do %>
+                <i class="fas fa-eye me-1"></i> Voir la liste
+              <% end %>
+
+              <%= button_to admin_delete_import_path(type: 'horses', id: @concours.id),
+                            method: :delete,
+                            form_class: "flex-fill tab-link",
+                            data: { turbo_confirm: "Supprimer tous les chevaux importés ?" },
+                            class: "btn text-center w-100 border-0 py-2 bg-transparent" do %>
+                <i class="fas fa-trash me-1"></i> Supprimer
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- Modal liste épreuves -->
+<div class="modal fade" id="modalClasses" tabindex="-1" aria-labelledby="modalLabelClasses" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalLabelClasses">Liste des épreuves importées</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+
+        <% grouped_classes = ShowCompetition.where(show_ID: @concours.provider_competition_id)
+                                            .group_by(&:datum) %>
+
+        <% if grouped_classes.any? %>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Nom</th>
+                  <th scope="col">Heure</th>
+
+                </tr>
+              </thead>
+              <tbody>
+                <% grouped_classes.sort.each do |date, classes| %>
+                  <tr class="table-active">
+                    <td colspan="4" class="fw-bold text-dark">
+                      📅 <%= l(date, format: "%A %d/%m/%Y") %>
+                    </td>
+                  </tr>
+
+                  <% sorted_classes = classes.sort_by do |c| 
+                      if c.start_time.present?
+                        Time.zone.parse(c.start_time) rescue Time.zone.parse("23:59") # fallback si parsing échoue
+                      else
+                        c.class_num.to_i
+                      end
+                    end %>
+
+                  <% sorted_classes.each do |c| %>
+                    <tr>
+                      <td><%= c.class_num %></td>
+                      <td><%= c.class_name %></td>
+                      <td><%= c.start_time.presence || "-" %></td>
+
+                    </tr>
+                  <% end %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <p class="text-muted">Aucune épreuve importée.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal liste chevaux -->
+<div class="modal fade" id="modalHorses" tabindex="-1" aria-labelledby="modalLabelHorses" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalLabelHorses">Liste des chevaux importés</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+
+       <% horses = ShowHorse.where(Equipe_Show_ID: @concours.provider_competition_id).sort_by { |h| h.headnum.to_i } %>
+
+        <% if horses.any? %>
+          <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Nom</th>
+                  <th scope="col">Année de naissance</th>
+                  <th scope="col">FEI ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% horses.each do |h| %>
+                  <tr>
+                    <td><%= h.headnum %></td>
+                    <td><%= h.horsename %></td>
+                    <td><%= h.born_year %></td>
+                    <td><%= h.FEI_ID %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <p class="text-muted">Aucun cheval importé.</p>
+        <% end %>
+
+      </div>
+    </div>
+  </div>
+</div>

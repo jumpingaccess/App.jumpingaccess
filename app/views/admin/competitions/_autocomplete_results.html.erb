@@ -1,0 +1,21 @@
+<% if @competitions.any? %>
+  <div class="text-uppercase text-muted small px-3 pt-2">Concours</div>
+  <% @competitions.each do |comp| %>
+    <a href="<%= admin_meeting_path(comp.id) %>" class="autocomplete-item d-flex align-items-start gap-2 px-3 py-2 text-white text-decoration-none">
+      <% if comp.logo.attached? %>
+        <%= image_tag comp.logo.variant(resize_to_fill: [30, 30]), class: "rounded", style: "flex-shrink: 0;" %>
+      <% else %>
+        <i class="fas fa-horse fa-lg text-secondary" style="width: 30px;"></i>
+      <% end %>
+      <div class="flex-grow-1">
+        <div class="fw-semibold"><%= comp.name %></div>
+        <small class="text-muted">
+          <%= comp.location.presence || 'Lieu inconnu' %> –
+          <%= comp.start_date&.strftime("%b %d, %Y") %>
+        </small>
+      </div>
+    </a>
+  <% end %>
+<% else %>
+  <div class="px-3 py-2 text-white">Aucun concours trouvé.</div>
+<% end %>

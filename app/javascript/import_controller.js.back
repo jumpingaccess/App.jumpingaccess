@@ -1,0 +1,50 @@
+import { Controller } from "@hotwired/stimulus"
+
+export default class extends Controller {
+  connect() {
+    console.log("Stimulus import connecté")
+  }
+  start(event) {
+    event.preventDefault()
+    console.log("Stimulus fonctionne ✅")
+    const url = this.element.dataset.importUrl
+    const modalEl = document.getElementById("importProgressModal")
+    const modal = new bootstrap.Modal(modalEl)
+    const progressBar = document.getElementById("importProgressBar")
+
+    // Reset bar
+    progressBar.style.width = "0%"
+
+    modal.show()
+
+    // Simulate progress
+    let progress = 0
+    const interval = setInterval(() => {
+      if (progress < 95) {
+        progress += Math.random() * 5 // aléatoire entre 0 et 5
+        progressBar.style.width = `${Math.min(progress, 95)}%`
+      }
+    }, 150)
+
+    // Launch fetch
+    fetch(url, {
+      headers: { "Accept": "text/vnd.turbo-stream.html" }
+    })
+    .then(response => {
+      clearInterval(interval)
+      progressBar.style.width = "100%"
+
+      setTimeout(() => {
+        modal.hide()
+        if (response.redirected) {
+          window.location.href = response.url
+        }
+      }, 500) // petite pause visuelle avant fermeture
+    })
+    .catch(error => {
+      clearInterval(interval)
+      modal.hide()
+      alert("Erreur pendant l'import")
+    })
+  }
+}

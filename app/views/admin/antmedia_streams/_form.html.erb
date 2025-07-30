@@ -1,0 +1,15 @@
+<div class="mb-3">
+  <%= f.label :stream_name, "Nom du stream" %>
+  <%= f.text_field :stream_name, class: "form-control" %>
+</div>
+
+<div class="mb-3">
+  <%= f.label :protocol, "Protocole" %>
+ <%= f.select :proto, AntmediaStream::PROTOCOLS.map { |p| [p.upcase, p] }, {}, class: "form-select" %>
+
+</div>
+
+<div class="mb-3">
+  <%= f.label :piste_name, "Piste associée" %>
+  <%= f.text_field :piste_name, class: "form-control" %>
+</div>
