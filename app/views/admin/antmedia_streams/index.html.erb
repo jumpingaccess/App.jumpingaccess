@@ -1,6 +1,8 @@
 <h3 class="mb-3">Streams sur ott.jumpingaccess.com</h3>
 
-<%= render "new_modal", antmedia_stream: @new_antmedia_stream %>
+<!-- ✅ Correction : Enlever le paramètre antmedia_stream -->
+<%= render "new_modal" %>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
   <%= link_to "#", class: "btn btn-outline-primary btn-sm", data: { bs_toggle: "modal", bs_target: "#newModal" } do %>
     <i class="fa-solid fa-plus me-2"></i> Ajouter
@@ -13,23 +15,25 @@
     <i class="fa-solid fa-download me-2"></i> Importer depuis Antmedia
   <% end %>
 </div>
+
 <!-- 📦 Carte des streams locaux -->
 <div class="card mb-4">
   <div class="card-header">
     <h5 class="mb-0"><i class="fa-solid fa-server me-2"></i> Streams ajoutés depuis cette page</h5>
   </div>
   <div class="card-body p-0">
-    <table class="table table-striped mb-0">
-      <thead>
+    <% if @antmedia_streams.any? %>
+      <table class="table table-striped mb-0">
+        <thead>
         <tr>
           <th>Nom</th>
           <th>Clé</th>
           <th>Protocole</th>
           <th>Piste</th>
-          <th></th>
+          <th>Actions</th>
         </tr>
-      </thead>
-      <tbody>
+        </thead>
+        <tbody>
         <% @antmedia_streams.each do |stream| %>
           <tr>
             <td><%= stream.stream_name %></td>
@@ -39,14 +43,20 @@
             <td>
               <%= render "edit_modal", antmedia_stream: stream %>
               <%= button_to "Supprimer", antmedia_destroy_admin_meeting_path(@meeting, stream),
-                  method: :delete,
-                  class: "btn btn-danger btn-sm",
-                  data: { turbo_confirm: "Supprimer ce stream ?" } %>
+                            method: :delete,
+                            class: "btn btn-danger btn-sm",
+                            data: { turbo_confirm: "Supprimer ce stream ?" } %>
             </td>
           </tr>
         <% end %>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="p-4 text-center text-muted">
+        <i class="fa-solid fa-video fa-2x mb-2"></i>
+        <p>Aucun stream ajouté pour ce meeting.</p>
+      </div>
+    <% end %>
   </div>
 </div>
 
@@ -56,8 +66,9 @@
     <h5 class="mb-0"><i class="fa-solid fa-video me-2"></i> Streams présents sur ott.jumpingaccess.com</h5>
   </div>
   <div class="card-body p-0">
-    <table class="table table-bordered table-sm mb-0">
-      <thead>
+    <% if @remote_streams.any? %>
+      <table class="table table-bordered table-sm mb-0">
+        <thead>
         <tr>
           <th>Nom</th>
           <th>Status</th>
@@ -65,8 +76,8 @@
           <th>RTMP URL</th>
           <th>Débit</th>
         </tr>
-      </thead>
-      <tbody>
+        </thead>
+        <tbody>
         <% @remote_streams.each do |stream| %>
           <tr>
             <td><%= stream["name"] %></td>
@@ -75,70 +86,75 @@
             <td><%= stream["rtmpURL"] %></td>
             <% if stream["streamId"] %>
               <td data-stream-id="<%= stream["streamId"] %>">
-                <span data-bitrate-value>
-                  <%= number_with_precision(stream["bitrate"].to_f / 1_000_000, precision: 2) %> Mbit/s
-                </span>
+                  <span data-bitrate-value>
+                    <%= number_with_precision(stream["bitrate"].to_f / 1_000_000, precision: 2) %> Mbit/s
+                  </span>
               </td>
             <% else %>
-              <td colspan="2">Données manquantes</td>
+              <td>Données manquantes</td>
             <% end %>
           </tr>
         <% end %>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="p-4 text-center text-muted">
+        <i class="fa-solid fa-exclamation-triangle fa-2x mb-2"></i>
+        <p>Aucun stream trouvé sur le serveur AntMedia ou erreur de connexion.</p>
+      </div>
+    <% end %>
   </div>
 </div>
 
 <!-- 📡 Script pour mise à jour des débits -->
 <script>
-  document.addEventListener("turbo:load", function () {
-    let intervalId = null
+    document.addEventListener("turbo:load", function () {
+        let intervalId = null
 
-    function updateBitrates() {
-      fetch("/admin/streams/stats.json")
-        .then(response => response.json())
-        .then(data => {
-          const activeStreams = data.filter(s => s.status !== "created" && s.status !== "finished")
+        function updateBitrates() {
+            fetch("/admin/streams/stats.json")
+                .then(res => res.json())
+                .then(data => {
+                    const activeStreams = data.filter(s => s.status !== "created" && s.status !== "finished")
 
-          // Si aucun stream actif, on ne démarre pas ou on arrête si déjà démarré
-          if (activeStreams.length === 0) {
+                    // Si aucun stream actif, on ne démarre pas ou on arrête si déjà démarré
+                    if (activeStreams.length === 0) {
+                        if (intervalId) {
+                            clearInterval(intervalId)
+                            intervalId = null
+                        }
+                        return
+                    }
+
+                    document.querySelectorAll("[data-stream-id]").forEach(el => {
+                        const streamId = el.getAttribute("data-stream-id")
+                        const stream = activeStreams.find(s => s.id === streamId)
+
+                        if (stream && stream.bitrate !== undefined) {
+                            const valueEl = el.querySelector("[data-bitrate-value]")
+                            if (valueEl) {
+                                const mbps = (stream.bitrate / 1_000_000).toFixed(2)
+                                valueEl.textContent = `${mbps} Mbit/s`
+                            }
+                        }
+                    })
+
+
+                    if (!intervalId) {
+                        intervalId = setInterval(updateBitrates, 5000)
+                    }
+                })
+                .catch(err => {
+                    console.error("Erreur lors de la récupération des stats de stream:", err)
+                })
+        }
+
+        updateBitrates()
+
+        document.addEventListener("turbo:before-cache", () => {
             if (intervalId) {
-              clearInterval(intervalId)
-              intervalId = null
+                clearInterval(intervalId)
             }
-            return
-          }
-
-          document.querySelectorAll("[data-stream-id]").forEach(el => {
-            const streamId = el.getAttribute("data-stream-id")
-            const stream = activeStreams.find(s => s.id === streamId)
-
-            if (stream && stream.bitrate !== undefined) {
-              const valueEl = el.querySelector("[data-bitrate-value]")
-              if (valueEl) {
-                const mbps = (stream.bitrate / 1_000_000).toFixed(2)
-                valueEl.textContent = `${mbps} Mbit/s`
-              }
-            }
-          })
-
-         
-          if (!intervalId) {
-            intervalId = setInterval(updateBitrates, 5000)
-          }
         })
-        .catch(err => {
-          console.error("Erreur lors de la récupération des stats de stream:", err)
-        })
-    }
-
-    updateBitrates()
-
-    document.addEventListener("turbo:before-cache", () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
     })
-  })
 </script>
-

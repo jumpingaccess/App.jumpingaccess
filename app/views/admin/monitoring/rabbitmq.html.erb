@@ -1,0 +1,327 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="page-title-box">
+        <h4 class="page-title">
+          <i class="fa-solid fa-server me-2"></i>
+          Monitoring RabbitMQ
+        </h4>
+        <div class="page-title-right">
+          <div class="btn-group">
+            <button type="button" class="btn btn-success btn-sm" id="refresh-rabbitmq">
+              <i class="fa-solid fa-refresh me-1"></i>Actualiser
+            </button>
+            <a href="http://192.168.1.130:15672" target="_blank" class="btn btn-outline-primary btn-sm">
+              <i class="fa-solid fa-external-link-alt me-1"></i>Interface RabbitMQ
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RabbitMQ Server Info -->
+  <div class="row">
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fa-solid fa-info-circle me-2"></i>
+            Informations Serveur
+          </h5>
+        </div>
+        <div class="card-body">
+          <dl class="row">
+            <dt class="col-sm-6">Host:</dt>
+            <dd class="col-sm-6"><%= @rabbitmq_status[:host] %></dd>
+
+            <dt class="col-sm-6">Port:</dt>
+            <dd class="col-sm-6"><%= @rabbitmq_status[:port] %></dd>
+
+            <dt class="col-sm-6">Status:</dt>
+            <dd class="col-sm-6">
+              <span class="badge bg-<%= @rabbitmq_status[:status] == 'connected' ? 'success' : 'danger' %>">
+                <%= @rabbitmq_status[:status].capitalize %>
+              </span>
+            </dd>
+
+            <dt class="col-sm-6">Dernière vérification:</dt>
+            <dd class="col-sm-6"><%= @rabbitmq_status[:last_check]&.strftime("%H:%M:%S") %></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fa-solid fa-chart-bar me-2"></i>
+            Statistiques Queues
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="text-center">
+                <h3 class="text-primary mb-1"><%= @queues_info.count %></h3>
+                <p class="text-muted mb-0">Total Queues</p>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-center">
+                <h3 class="text-success mb-1"><%= @queues_info.count %></h3>
+                <p class="text-muted mb-0">Queues Actives</p>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-center">
+                <h3 class="text-info mb-1"><%= Competition.where(enable_queue: true).count %></h3>
+                <p class="text-muted mb-0">Compétitions</p>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-center">
+                <h3 class="text-warning mb-1">0</h3>
+                <p class="text-muted mb-0">Messages en attente</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Queues Details -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fa-solid fa-list me-2"></i>
+            Détail des Queues (<%= @queues_info.count %>)
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover" id="queues-detail-table">
+              <thead>
+              <tr>
+                <th>Nom de la Queue</th>
+                <th>Compétition</th>
+                <th>Épreuve</th>
+                <th>Class ID</th>
+                <th>Messages</th>
+                <th>Consumers</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+              </thead>
+              <tbody>
+              <% @queues_info.each do |queue| %>
+                <tr>
+                  <td>
+                    <code class="text-primary"><%= queue[:name] %></code>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="avatar-xs bg-primary rounded me-2">
+                          <span class="avatar-title text-white">
+                            <i class="fa-solid fa-trophy"></i>
+                          </span>
+                      </div>
+                      <%= truncate(queue[:competition], length: 30) %>
+                    </div>
+                  </td>
+                  <td><%= truncate(queue[:class_name], length: 40) %></td>
+                  <td><span class="badge bg-secondary"><%= queue[:class_id] %></span></td>
+                  <td>
+                    <span class="badge bg-info">0</span>
+                    <small class="text-muted">msgs</small>
+                  </td>
+                  <td>
+                    <span class="badge bg-success">1</span>
+                    <small class="text-muted">consumer</small>
+                  </td>
+                  <td>
+                      <span class="badge bg-success">
+                        <i class="fa-solid fa-check me-1"></i>Active
+                      </span>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-info btn-sm"
+                              onclick="viewQueueDetails('<%= queue[:name] %>')"
+                              title="Voir détails">
+                        <i class="fa-solid fa-eye"></i>
+                      </button>
+                      <button class="btn btn-outline-warning btn-sm"
+                              onclick="purgeQueue('<%= queue[:name] %>')"
+                              title="Purger queue">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+
+              <% if @queues_info.empty? %>
+                <tr>
+                  <td colspan="8" class="text-center text-muted py-4">
+                    <i class="fa-solid fa-inbox fa-3x mb-3"></i>
+                    <h5>Aucune queue active</h5>
+                    <p>Activez RabbitMQ sur vos compétitions pour voir les queues ici.</p>
+                    <%= link_to "Voir les compétitions", admin_monitoring_competitions_path, class: "btn btn-primary" %>
+                  </td>
+                </tr>
+              <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RabbitMQ Commands Queue -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fa-solid fa-terminal me-2"></i>
+            Queue de Commandes Rails → Node.js
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+              <h6 class="mb-1">rails_to_nodejs_commands</h6>
+              <small class="text-muted">Queue pour envoyer des commandes du serveur Rails vers le consumer Node.js</small>
+            </div>
+            <div class="text-end">
+              <span class="badge bg-success">Active</span>
+              <br>
+              <small class="text-muted">0 messages en attente</small>
+            </div>
+          </div>
+
+          <div class="border-top pt-3">
+            <h6>Test de commandes</h6>
+            <div class="btn-group">
+              <button class="btn btn-outline-primary btn-sm" onclick="sendTestCommand('ping')">
+                <i class="fa-solid fa-paper-plane me-1"></i>Test Ping
+              </button>
+              <button class="btn btn-outline-success btn-sm" onclick="sendTestCommand('sync')">
+                <i class="fa-solid fa-sync me-1"></i>Forcer Sync
+              </button>
+              <button class="btn btn-outline-info btn-sm" onclick="sendTestCommand('status')">
+                <i class="fa-solid fa-question me-1"></i>Demander Status
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal pour détails queue -->
+<div class="modal fade" id="queueDetailsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Détails de la Queue</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="queue-details-content">
+        <div class="text-center">
+          <div class="spinner-border" role="status"></div>
+          <p class="mt-2">Chargement des détails...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    document.addEventListener('turbo:load', function() {
+        // Refresh button
+        document.getElementById('refresh-rabbitmq')?.addEventListener('click', function() {
+            window.location.reload();
+        });
+    });
+
+    function viewQueueDetails(queueName) {
+        const modal = new bootstrap.Modal(document.getElementById('queueDetailsModal'));
+        const content = document.getElementById('queue-details-content');
+
+        content.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status"></div>
+            <p class="mt-2">Chargement des détails...</p>
+        </div>
+    `;
+
+        modal.show();
+
+        // Simuler des détails (à remplacer par un vrai appel API)
+        setTimeout(() => {
+            content.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Informations générales</h6>
+                    <dl class="row">
+                        <dt class="col-sm-4">Nom:</dt>
+                        <dd class="col-sm-8"><code>${queueName}</code></dd>
+                        <dt class="col-sm-4">Type:</dt>
+                        <dd class="col-sm-8">Timekeeping</dd>
+                        <dt class="col-sm-4">Durabilité:</dt>
+                        <dd class="col-sm-8"><span class="badge bg-success">Durable</span></dd>
+                        <dt class="col-sm-4">Auto-delete:</dt>
+                        <dd class="col-sm-8"><span class="badge bg-secondary">Non</span></dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <h6>Statistiques</h6>
+                    <dl class="row">
+                        <dt class="col-sm-6">Messages:</dt>
+                        <dd class="col-sm-6">0</dd>
+                        <dt class="col-sm-6">Consumers:</dt>
+                        <dd class="col-sm-6">1</dd>
+                        <dt class="col-sm-6">Débit (msg/s):</dt>
+                        <dd class="col-sm-6">0</dd>
+                    </dl>
+                </div>
+            </div>
+        `;
+        }, 1000);
+    }
+
+    function purgeQueue(queueName) {
+        alert('Fonctionnalité à implémenter');
+    }
+
+    function sendTestCommand(command) {
+        // Envoyer une commande test à Node.js via RabbitMQ
+        fetch('/admin/monitoring/send_command', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ command: command })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Commande "${command}" envoyée avec succès!`);
+                } else {
+                    alert(`Erreur: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                alert(`Erreur lors de l'envoi: ${error}`);
+            });
+    }
+</script>

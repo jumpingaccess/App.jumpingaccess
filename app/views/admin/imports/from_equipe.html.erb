@@ -1,0 +1,314 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="page-title-box">
+        <h4 class="page-title">
+          <i class="fa-solid fa-download me-2"></i>
+          Importer depuis Equipe
+        </h4>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Configuration de l'import</h5>
+        </div>
+        <div class="card-body">
+          <!-- Affichage de l'ID organisateur -->
+          <div class="alert alert-info">
+            <i class="fa-solid fa-info-circle me-2"></i>
+            <strong>Votre ID Organisateur Equipe :</strong>
+            <code><%= @current_user_equipe_id %></code>
+          </div>
+
+          <%= form_with url: import_equipe_path, method: :post, local: true, class: "needs-validation", novalidate: true do |form| %>
+
+            <!-- Type d'import (fixé sur événements) -->
+            <%= form.hidden_field :import_type, value: 'events' %>
+
+            <!-- Sélection de l'organisateur -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">Organisateur Equipe <span class="text-danger">*</span></label>
+              <select id="organizer_select" name="organizer_id" class="form-select" required>
+                <option value="">Sélectionnez un organisateur</option>
+                <% if @organizers.present? %>
+                  <% @organizers.each do |organizer| %>
+                    <option value="<%= organizer['id'] %>"><%= organizer['arrangor'] %></option>
+                  <% end %>
+                <% end %>
+              </select>
+              <div class="invalid-feedback">
+                Veuillez sélectionner un organisateur.
+              </div>
+            </div>
+
+            <!-- Sélection du concours -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">Concours <span class="text-danger">*</span></label>
+              <select id="meeting_select" name="meeting_id" class="form-select" required disabled>
+                <option value="">Sélectionnez d'abord un organisateur</option>
+              </select>
+              <div class="invalid-feedback">
+                Veuillez sélectionner un concours.
+              </div>
+              <div id="meeting_info" class="mt-2" style="display: none;">
+                <div class="alert alert-info">
+                  <div><strong>Concours :</strong> <span id="meeting_name"></span></div>
+                  <div><strong>Dates :</strong> <span id="meeting_dates"></span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Options avancées -->
+            <div class="mb-4">
+              <div class="form-check">
+                <%= form.check_box :overwrite_existing, class: "form-check-input" %>
+                <%= form.label :overwrite_existing, "Écraser les données existantes", class: "form-check-label" %>
+                <small class="form-text text-muted d-block">
+                  Si coché, les données existantes seront mises à jour avec les nouvelles données d'Equipe
+                </small>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="d-flex justify-content-between">
+              <%= link_to "Annuler", root_path, class: "btn btn-secondary" %>
+              <%= form.submit "Importer le concours",
+                              class: "btn btn-primary btn-lg",
+                              id: "import_btn",
+                              disabled: true,
+                              data: {
+                                disable_with: "<i class='fa-solid fa-spinner fa-spin me-2'></i>Import en cours..."
+                              } %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar avec informations -->
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fa-solid fa-info me-2"></i>Informations
+          </h5>
+        </div>
+        <div class="card-body">
+          <h6 class="fw-bold">Connexion Equipe</h6>
+          <div class="alert alert-success">
+            <i class="fa-solid fa-check-circle me-2"></i>
+            <small>Connecté avec l'ID <strong><%= @current_user_equipe_id %></strong></small>
+          </div>
+
+          <% if @organizers.present? %>
+            <div class="alert alert-info">
+              <i class="fa-solid fa-info-circle me-2"></i>
+              <small><%= @organizers.count %> organisateur(s) disponible(s)</small>
+            </div>
+          <% else %>
+            <div class="alert alert-warning">
+              <i class="fa-solid fa-exclamation-triangle me-2"></i>
+              <small>Aucun organisateur trouvé</small>
+            </div>
+          <% end %>
+
+          <hr>
+
+          <h6 class="fw-bold">Import d'événements Equipe</h6>
+          <ul class="list-unstyled small text-muted">
+            <li><i class="fa-solid fa-check text-success me-2"></i>Sélection de l'organisateur</li>
+            <li><i class="fa-solid fa-check text-success me-2"></i>Choix du concours</li>
+            <li><i class="fa-solid fa-check text-success me-2"></i>Import sécurisé</li>
+            <li><i class="fa-solid fa-check text-success me-2"></i>Validation des données</li>
+          </ul>
+
+          <div class="mt-3">
+            <h6 class="fw-bold">Votre ID Equipe</h6>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="fa-solid fa-user"></i>
+              </span>
+              <input type="text" class="form-control" value="<%= @current_user_equipe_id %>" readonly>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historique des derniers imports (optionnel) -->
+
+    </div>
+  </div>
+</div>
+
+<script>
+    document.addEventListener('turbo:load', function() {
+        const organizerSelect = document.getElementById('organizer_select');
+        const meetingSelect = document.getElementById('meeting_select');
+        const meetingInfo = document.getElementById('meeting_info');
+        const importBtn = document.getElementById('import_btn');
+
+        // Vérifier que les éléments existent
+        if (!organizerSelect || !meetingSelect || !meetingInfo || !importBtn) {
+            console.log('Elements not found');
+            return;
+        }
+
+        // Event listener pour le changement d'organisateur
+        organizerSelect.addEventListener('change', function() {
+            const organizerId = this.value;
+            if (organizerId) {
+                loadMeetings(organizerId);
+            } else {
+                resetMeetingSelect();
+            }
+        });
+
+        // Event listener pour le changement de concours
+        meetingSelect.addEventListener('change', function() {
+            console.log('Meeting changed, value:', this.value);
+
+            if (this.value) {
+                // Activer le bouton import dès qu'un concours est sélectionné
+                importBtn.disabled = false;
+
+                // Essayer d'afficher les infos si disponibles
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption.dataset && selectedOption.dataset.name) {
+                    showMeetingInfo(selectedOption);
+                } else {
+                    // Affichage simple sans les détails
+                    const nameEl = document.getElementById('meeting_name');
+                    const datesEl = document.getElementById('meeting_dates');
+                    if (nameEl) nameEl.textContent = selectedOption.textContent;
+                    if (datesEl) datesEl.textContent = 'Voir les détails dans Equipe';
+                    meetingInfo.style.display = 'block';
+                }
+
+                console.log('Import button should be enabled now');
+            } else {
+                importBtn.disabled = true;
+                hideMeetingInfo();
+                console.log('Import button disabled');
+            }
+        });
+
+        function loadMeetings(organizerId) {
+            meetingSelect.disabled = true;
+            meetingSelect.innerHTML = '<option value="">Chargement des concours...</option>';
+            resetMeetingInfo();
+
+            // Appel AJAX vers notre contrôleur Rails
+            fetch(`/admin/import/equipe/meetings?organizer_id=${organizerId}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': document.querySelector('[name="csrf-token"]').getAttribute('content')
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors du chargement des concours');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    meetingSelect.innerHTML = '<option value="">Sélectionnez un concours</option>';
+
+                    data.forEach(meeting => {
+                        const option = document.createElement('option');
+                        option.value = meeting.id;
+                        option.textContent = meeting.name;
+                        option.dataset.name = meeting.name;
+                        option.dataset.startsOn = meeting.starts_on;
+                        option.dataset.endsOn = meeting.ends_on;
+                        option.dataset.organizerId = meeting.organizer_id;
+                        meetingSelect.appendChild(option);
+                    });
+
+                    meetingSelect.disabled = false;
+
+                    if (data.length === 0) {
+                        meetingSelect.innerHTML = '<option value="">Aucun concours disponible</option>';
+                        showAlert('Aucun concours actif trouvé pour cet organisateur.', 'warning');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    meetingSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+                    showAlert('Erreur lors du chargement des concours.', 'danger');
+                });
+        }
+
+        function resetMeetingSelect() {
+            meetingSelect.innerHTML = '<option value="">Sélectionnez d\'abord un organisateur</option>';
+            meetingSelect.disabled = true;
+            resetMeetingInfo();
+        }
+
+        function showMeetingInfo(option) {
+            const nameEl = document.getElementById('meeting_name');
+            const datesEl = document.getElementById('meeting_dates');
+
+            if (nameEl) nameEl.textContent = option.dataset.name;
+
+            if (datesEl) {
+                const startDate = new Date(option.dataset.startsOn).toLocaleDateString('fr-FR');
+                const endDate = new Date(option.dataset.endsOn).toLocaleDateString('fr-FR');
+                datesEl.textContent = `${startDate} - ${endDate}`;
+            }
+
+            meetingInfo.style.display = 'block';
+        }
+
+        function hideMeetingInfo() {
+            meetingInfo.style.display = 'none';
+        }
+
+        function resetMeetingInfo() {
+            hideMeetingInfo();
+            importBtn.disabled = true;
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+            const form = document.querySelector('form');
+            if (form) {
+                form.insertBefore(alertDiv, form.firstChild);
+            }
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    });
+
+    // Validation du formulaire
+    (function() {
+        'use strict';
+        document.addEventListener('turbo:load', function() {
+            var forms = document.getElementsByClassName('needs-validation');
+            var validation = Array.prototype.filter.call(forms, function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        });
+    })();
+</script>

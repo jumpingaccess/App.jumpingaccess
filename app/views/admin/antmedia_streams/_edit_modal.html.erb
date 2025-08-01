@@ -2,14 +2,26 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <%= form_with model: antmedia_stream,
-              url: antmedia_update_admin_meeting_path(@meeting, stream_id: antmedia_stream.id),
-              method: :patch,
-              local: true do |f| %>
+                    url: antmedia_update_admin_meeting_path(@meeting, stream_id: antmedia_stream.id),
+                    method: :patch,
+                    local: true do |f| %>
         <div class="modal-header">
           <h5 class="modal-title">Modifier <%= antmedia_stream.stream_name %></h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
+          <!-- ✅ Affichage des erreurs pour l'édition -->
+          <% if antmedia_stream.errors.any? %>
+            <div class="alert alert-danger">
+              <h6>Erreur(s) détectée(s) :</h6>
+              <ul class="mb-0">
+                <% antmedia_stream.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
           <%= render "form", f: f %>
         </div>
         <div class="modal-footer">

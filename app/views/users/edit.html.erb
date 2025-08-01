@@ -16,14 +16,24 @@
       <%= f.label :password_confirmation, class: "form-label" %>
       <%= f.password_field :password_confirmation, class: "form-control" %>
     </div>
+
     <div class="mb-3">
-        <label class="form-label">Rôle</label>
-        <input type="text"
-                class="form-control"
-                value="<%= current_user.role.titleize %>"
-                readonly
-                disabled>
+      <label class="form-label">Rôle</label>
+      <input type="text"
+             class="form-control"
+             value="<%= current_user.role.titleize %>"
+             readonly
+             disabled>
     </div>
+
+    <div class="mb-3">
+      <%= f.label :equipe_organizer_id, "ID Organisateur Equipe", class: "form-label" %>
+      <%= f.text_field :equipe_organizer_id, class: "form-control" %>
+      <small class="form-text text-muted">
+        Votre ID d'organisateur dans le système Equipe (si applicable)
+      </small>
+    </div>
+
     <%= f.submit "Mettre à jour", class: "btn btn-primary" %>
   <% end %>
 </div>

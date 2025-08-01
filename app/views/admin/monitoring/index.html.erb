@@ -1,0 +1,410 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="page-title-box">
+        <h4 class="page-title">
+          <i class="fa-solid fa-chart-line me-2"></i>
+          Monitoring Timekeeping
+        </h4>
+        <div class="page-title-right">
+          <div class="btn-group">
+            <button type="button" class="btn btn-success btn-sm" id="refresh-btn">
+              <i class="fa-solid fa-refresh me-1"></i>Actualiser
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="auto-refresh-btn">
+              <i class="fa-solid fa-clock me-1"></i>Auto (30s)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Cards -->
+  <div class="row">
+    <div class="col-xl-3 col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0">
+              <div class="avatar-sm bg-success rounded">
+                <span class="avatar-title">
+                  <i class="fa-solid fa-server"></i>
+                </span>
+              </div>
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <h6 class="mb-0">RabbitMQ</h6>
+              <div class="d-flex align-items-center">
+                <span id="rabbitmq-status" class="badge bg-success">Connected</span>
+                <small class="text-muted ms-2" id="rabbitmq-info">192.168.1.130:5672</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0">
+              <div class="avatar-sm bg-primary rounded">
+                <span class="avatar-title">
+                  <i class="fa-brands fa-node-js"></i>
+                </span>
+              </div>
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <h6 class="mb-0">Node.js Consumer</h6>
+              <div class="d-flex align-items-center">
+                <span id="nodejs-status" class="badge bg-warning">Unknown</span>
+                <small class="text-muted ms-2" id="nodejs-info">Checking...</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0">
+              <div class="avatar-sm bg-info rounded">
+                <span class="avatar-title">
+                  <i class="fa-solid fa-trophy"></i>
+                </span>
+              </div>
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <h6 class="mb-0">Compétitions Actives</h6>
+              <div class="d-flex align-items-center">
+                <span class="h5 mb-0" id="active-competitions"><%= @stats[:enabled_competitions] %></span>
+                <small class="text-muted ms-2">/ <%= @stats[:total_competitions] %> total</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0">
+              <div class="avatar-sm bg-warning rounded">
+                <span class="avatar-title">
+                  <i class="fa-solid fa-list"></i>
+                </span>
+              </div>
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <h6 class="mb-0">Queues Actives</h6>
+              <div class="d-flex align-items-center">
+                <span class="h5 mb-0" id="active-queues"><%= @stats[:active_classes] %></span>
+                <small class="text-muted ms-2">épreuves</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Information -->
+  <div class="row">
+    <!-- System Status -->
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fa-solid fa-cogs me-2"></i>
+            État du Système
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <tbody>
+              <tr>
+                <td><i class="fa-solid fa-server me-2"></i>RabbitMQ</td>
+                <td>
+                    <span class="badge bg-<%= @system_status[:rabbitmq][:status] == 'connected' ? 'success' : 'danger' %>">
+                      <%= @system_status[:rabbitmq][:status].capitalize %>
+                    </span>
+                </td>
+                <td class="text-muted">
+                  <small><%= @system_status[:rabbitmq][:last_check]&.strftime("%H:%M:%S") %></small>
+                </td>
+              </tr>
+              <tr>
+                <td><i class="fa-brands fa-node-js me-2"></i>Node.js</td>
+                <td>
+                  <span class="badge bg-<%= @system_status[:nodejs][:status] == 'connected' ? 'success' : (@system_status[:nodejs][:status] == 'disconnected' ? 'danger' : 'warning') %>">
+                    <%= @system_status[:nodejs][:status].capitalize %>
+                  </span>
+                </td>
+                <td class="text-muted">
+                  <small>
+                    <%= @system_status[:nodejs][:last_check]&.strftime("%H:%M:%S") %>
+                    <% if @system_status[:nodejs][:uptime] %>
+                      • Uptime: <%= time_ago_in_words(Time.current - @system_status[:nodejs][:uptime].seconds) %>
+                    <% end %>
+                  </small>
+                </td>
+              </tr>
+              <tr>
+                <td><i class="fa-solid fa-database me-2"></i>Database</td>
+                <td>
+                    <span class="badge bg-<%= @system_status[:database][:status] == 'connected' ? 'success' : 'danger' %>">
+                      <%= @system_status[:database][:status].capitalize %>
+                    </span>
+                </td>
+                <td class="text-muted">
+                  <small><%= @system_status[:database][:last_check]&.strftime("%H:%M:%S") %></small>
+                </td>
+              </tr>
+              <tr>
+                <td><i class="fa-solid fa-key me-2"></i>API</td>
+                <td>
+                    <span class="badge bg-<%= @system_status[:api][:status] == 'configured' ? 'success' : 'danger' %>">
+                      <%= @system_status[:api][:status].capitalize %>
+                    </span>
+                </td>
+                <td class="text-muted">
+                  <small><%= @system_status[:api][:last_check]&.strftime("%H:%M:%S") %></small>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Competitions -->
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fa-solid fa-trophy me-2"></i>
+            Compétitions Actives
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @stats[:enabled_competitions] > 0 %>
+            <% Competition.where(enable_queue: true).limit(5).each do |comp| %>
+              <div class="d-flex align-items-center mb-2">
+                <div class="flex-shrink-0">
+                  <div class="avatar-xs bg-primary rounded-circle">
+                    <span class="avatar-title text-white">
+                      <i class="fa-solid fa-horse"></i>
+                    </span>
+                  </div>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                  <h6 class="mb-0"><%= truncate(comp.name, length: 40) %></h6>
+                  <small class="text-muted">
+                    <%= comp.show_competitions.count %> épreuves •
+                    ID: <%= comp.provider_competition_id %>
+                  </small>
+                </div>
+                <div class="flex-shrink-0">
+                  <span class="badge bg-success">Active</span>
+                </div>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="text-center text-muted py-3">
+              <i class="fa-solid fa-exclamation-triangle fa-2x mb-2"></i>
+              <p>Aucune compétition active</p>
+              <small>Activez RabbitMQ dans la configuration des compétitions</small>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Queues Information -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fa-solid fa-list me-2"></i>
+            Queues RabbitMQ Actives
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover" id="queues-table">
+              <thead>
+              <tr>
+                <th>Queue Name</th>
+                <th>Compétition</th>
+                <th>Épreuve</th>
+                <th>Status</th>
+                <th>Messages</th>
+              </tr>
+              </thead>
+              <tbody id="queues-tbody">
+              <tr>
+                <td colspan="5" class="text-center">
+                  <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                  Chargement des queues...
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    document.addEventListener('turbo:load', function () {
+        let autoRefreshInterval;
+        let isAutoRefreshEnabled = false;
+
+        // Refresh button
+        document.getElementById('refresh-btn')?.addEventListener('click', function () {
+            refreshStatus();
+        });
+
+        // Auto refresh toggle
+        document.getElementById('auto-refresh-btn')?.addEventListener('click', function () {
+            toggleAutoRefresh();
+        });
+
+        function refreshStatus() {
+            fetch('/admin/monitoring/status', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': document.querySelector('[name="csrf-token"]').getAttribute('content')
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    updateStatusDisplay(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching status:', error);
+                });
+
+            loadQueuesInfo();
+        }
+
+        function updateStatusDisplay(data) {
+            // Update Node.js status
+            const nodejsStatus = document.getElementById('nodejs-status');
+            const nodejsInfo = document.getElementById('nodejs-info');
+
+            if (data.nodejs.status === 'running') {
+                nodejsStatus.className = 'badge bg-success';
+                nodejsStatus.textContent = 'Running';
+                nodejsInfo.textContent = data.nodejs.info || 'Dernière sync récente';
+            } else if (data.nodejs.status === 'connected') {
+                nodejsStatus.className = 'badge bg-success';
+                nodejsStatus.textContent = 'Connected';
+                nodejsInfo.textContent = 'Health check OK';
+            } else if (data.nodejs.status === 'unknown') {
+                nodejsStatus.className = 'badge bg-warning';
+                nodejsStatus.textContent = 'Unknown';
+                nodejsInfo.textContent = data.nodejs.info || 'Pas de sync récente';
+            } else {
+                nodejsStatus.className = 'badge bg-danger';
+                nodejsStatus.textContent = 'Error';
+                nodejsInfo.textContent = data.nodejs.error || 'Erreur inconnue';
+            }
+
+            // Update RabbitMQ status
+            const rabbitmqStatus = document.getElementById('rabbitmq-status');
+            const rabbitmqInfo = document.getElementById('rabbitmq-info');
+
+            if (data.rabbitmq.status === 'connected') {
+                rabbitmqStatus.className = 'badge bg-success';
+                rabbitmqStatus.textContent = 'Connected';
+                rabbitmqInfo.textContent = `${data.rabbitmq.host}:${data.rabbitmq.port}`;
+            } else {
+                rabbitmqStatus.className = 'badge bg-danger';
+                rabbitmqStatus.textContent = 'Error';
+                rabbitmqInfo.textContent = data.rabbitmq.error || 'Connection failed';
+            }
+
+            // Update other statuses
+            document.getElementById('active-competitions').textContent = data.competitions;
+            document.getElementById('active-queues').textContent = data.active_queues;
+
+            // Update timestamp
+            const now = new Date().toLocaleTimeString();
+            document.querySelectorAll('.text-muted small').forEach(el => {
+                if (el.textContent.includes(':')) {
+                    el.textContent = now;
+                }
+            });
+        }
+
+        function loadQueuesInfo() {
+            fetch('/admin/monitoring/rabbitmq.json', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': document.querySelector('[name="csrf-token"]').getAttribute('content')
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    updateQueuesTable(data.queues);
+                })
+                .catch(error => {
+                    console.error('Error fetching queues:', error);
+                });
+        }
+
+        function updateQueuesTable(queues) {
+            const tbody = document.getElementById('queues-tbody');
+
+            if (queues.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Aucune queue active</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = queues.map(queue => `
+      <tr>
+        <td><code>${queue.name}</code></td>
+        <td>${queue.competition}</td>
+        <td>${queue.class_name || queue.class_id}</td>
+        <td><span class="badge bg-success">Active</span></td>
+        <td><span class="text-muted">-</span></td>
+      </tr>
+    `).join('');
+        }
+
+        function toggleAutoRefresh() {
+            const btn = document.getElementById('auto-refresh-btn');
+
+            if (isAutoRefreshEnabled) {
+                clearInterval(autoRefreshInterval);
+                btn.innerHTML = '<i class="fa-solid fa-clock me-1"></i>Auto (30s)';
+                btn.className = 'btn btn-outline-secondary btn-sm';
+                isAutoRefreshEnabled = false;
+            } else {
+                autoRefreshInterval = setInterval(refreshStatus, 30000);
+                btn.innerHTML = '<i class="fa-solid fa-stop me-1"></i>Stop Auto';
+                btn.className = 'btn btn-warning btn-sm';
+                isAutoRefreshEnabled = true;
+            }
+        }
+
+        // Initial load
+        refreshStatus();
+    });
+</script>

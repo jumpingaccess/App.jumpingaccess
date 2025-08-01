@@ -1,4 +1,4 @@
-# app/models/show_competition.rb
 class ShowCompetition < ApplicationRecord
-   belongs_to :competition
+   belongs_to :competition, optional: true  # ← Ajoutez optional: true
+   # validates :competition, presence: true  # ← Commentez cette ligne
 end

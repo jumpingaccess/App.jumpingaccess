@@ -1,6 +1,6 @@
 class Antmedia::Client
   include HTTParty
-  base_uri "http://ott.jumpingaccess.com:5080/LiveApp/rest"
+  base_uri "http://192.168.1.172:5080/LiveApp/rest"
 
   def initialize
     cred = ApiCredential.find_by(name: 'antmedia')

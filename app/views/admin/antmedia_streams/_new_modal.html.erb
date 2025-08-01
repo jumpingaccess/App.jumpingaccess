@@ -1,17 +1,32 @@
 <div class="modal fade" id="newModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-<%= form_with model: antmedia_stream,
-              url: antmedia_create_admin_meeting_path(@meeting),
-              local: true do |f| %>
+      <!-- ✅ Correction : Utiliser @new_antmedia_stream au lieu de antmedia_stream -->
+      <%= form_with model: @new_antmedia_stream,
+                    url: antmedia_create_admin_meeting_path(@meeting),
+                    local: true do |f| %>
 
         <div class="modal-header">
           <h5 class="modal-title">Créer un stream</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
+
         <div class="modal-body">
+          <!-- ✅ Affichage des erreurs -->
+          <% if @new_antmedia_stream&.errors&.any? %>
+            <div class="alert alert-danger">
+              <h6>Erreur(s) détectée(s) :</h6>
+              <ul class="mb-0">
+                <% @new_antmedia_stream.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
           <%= render "form", f: f %>
         </div>
+
         <div class="modal-footer">
           <%= f.submit "Créer", class: "btn btn-success" %>
         </div>

@@ -1,156 +1,128 @@
+# app/controllers/admin/meetings_controller.rb
 class Admin::MeetingsController < ApplicationController
   layout "dashboard"
   before_action :require_login
   before_action :set_meeting, only: [:show, :videos, :start_stream, :stop_stream, :import_startlist]
+
   def show
     @concours = Competition.find(params[:id])
-    # tu peux charger ici toutes les données utiles (vidéos, streams, etc.)
   end
 
+  # ✅ Méthode simplifiée avec le nouveau service
   def classimport
     competition = Competition.find(params[:id])
-    provider = competition.provider # 'equipe' ou 'hippodata'
-    provider_competition_id = competition.provider_competition_id
 
-    credential = ApiCredential.find_by(name: provider)
-    api_key = credential&.api_key
+    Rails.logger.debug "=== DÉBUT IMPORT CLASSES ==="
 
-    if api_key.blank?
-      redirect_back fallback_location: admin_dashboard_path, alert: "Clé API manquante pour le provider #{provider}"
-      return
-    end
+    begin
+      service = EquipeImportService.new(competition)
+      result = service.import_classes
 
-    url = "https://app.equipe.com/meetings/#{provider_competition_id}/competitions.json"
-    response = Faraday.get(url) do |req|
-      req.headers['x-api-key'] = api_key
-    end
+      Rails.logger.debug "Résultat du service: #{result.inspect}"
 
-    if response.success?
-      competitions_data = JSON.parse(response.body)
-
-      created_count = 0
-      updated_count = 0
-
-      competitions_data.each do |data|
-        next unless data['z'] == 'H' && data['klass'] != 'Do not compete'
-
-        show_competition = ShowCompetition.find_or_initialize_by(
-          show_ID: provider_competition_id,
-          class_ID: data[ 'kq']
-        )
-
-        was_new = show_competition.new_record?
-
-        show_competition.assign_attributes(
-          datum: data['datum'],
-          class_num: data['clabb'],
-          class_name: data['klass'],
-          Headtitle: data['oeverskr1'],
-          subtitle: data['oeverskr1'],
-          start_time: data['klock'],
-          arena: data['tavlingspl'],
-          Currency: data['premie_curr'],
-          FEI_ID_Class: data['feiid']
-        )
-
-        if show_competition.save
-          was_new ? created_count += 1 : updated_count += 1
-        end
+      if result[:success]
+        Rails.logger.debug "Import réussi, message: #{result[:message]}"
+        redirect_to admin_meeting_path(competition.id),
+                    notice: result[:message]
+      else
+        Rails.logger.debug "Import échoué, erreur: #{result[:error]}"
+        redirect_to admin_meeting_path(competition.id),
+                    alert: "Erreur d'import : #{result[:error]}"
       end
-
-      total = created_count + updated_count
-      
-      redirect_to admin_meeting_path(competition.id), notice: "#{total} épreuves importées : #{created_count} créées, #{updated_count} mises à jour."
-    else
-      redirect_to admin_meeting_path(competition.id), alert: "Erreur d'import depuis Equipe : #{response.status}"
+    rescue => e
+      Rails.logger.error "Import classes error: #{e.message}"
+      redirect_to admin_meeting_path(competition.id),
+                  alert: "Erreur technique lors de l'import des épreuves"
     end
-
   end
-
+  # ✅ Méthode simplifiée avec le nouveau service
   def horseimport
     competition = Competition.find(params[:id])
-    provider = competition.provider
-    provider_competition_id = competition.provider_competition_id
 
-    credential = ApiCredential.find_by(name: provider)
-    api_key = credential&.api_key
+    begin
+      service = EquipeImportService.new(competition)
+      result = service.import_horses
 
-    if api_key.blank?
-      redirect_to admin_meeting_path(competition), alert: "Clé API manquante pour le provider #{provider}"
-      return
-    end
-
-    url = "https://app.equipe.com/meetings/#{provider_competition_id}/horses.json"
-    response = Faraday.get(url) { |req| req.headers['x-api-key'] = api_key }
-
-    if response.success?
-      horses_data = JSON.parse(response.body)
-
-      created = 0
-      updated = 0
-
-      horses_data.each do |data|
-        next if data['hnr'].blank? || data['name'].blank?
-
-        horse = ShowHorse.find_or_initialize_by(
-          Equipe_Show_ID: provider_competition_id,
-          headnum: data['hnr']
-        )
-
-        was_new = horse.new_record?
-
-        horse.assign_attributes(
-          horsename:  data['name'],
-          born_year:  data['born_year'],
-          FEI_ID:     data['fei_id'],
-          Breed:      data['breed'] || "",
-          Breeder:    data['breeder'] || "",
-          Sire:       data['sire'] || "",
-          SireDam:    data['dam_sire'] || "",
-          color:      data['color'] || "",
-          owner:      data['owner'] || "",
-          sex:        data['sex'] || ""
-        )
-
-        if horse.save
-          was_new ? created += 1 : updated += 1
-        end
+      if result[:success]
+        redirect_to admin_meeting_path(competition.id),
+                    notice: result[:message]
+      else
+        redirect_to admin_meeting_path(competition.id),
+                    alert: "Erreur d'import : #{result[:error]}"
       end
-
-      redirect_to admin_meeting_path(competition), notice: "#{created + updated} chevaux importés : #{created} créés, #{updated} mis à jour."
-    else
-      redirect_to admin_meeting_path(competition), alert: "Erreur lors de l'import des chevaux : #{response.status}"
+    rescue => e
+      Rails.logger.error "Import horses error: #{e.message}"
+      redirect_to admin_meeting_path(competition.id),
+                  alert: "Erreur technique lors de l'import des chevaux"
     end
   end
 
-
-
-
   def videos
-    @meeting = Competition.find(params[:id]) # si Meeting = Competition
-    @show_competitions = ShowCompetition.order(:datum)
+    @meeting = Competition.find(params[:id])
+    @show_competitions = ShowCompetition.where(show_ID: @meeting.provider_competition_id).order(:datum)
+
+    # Récupération des streams Castr
     streams_response = CastrApiService.fetch_streams
-    #@castr_streams = streams_response[:success] ? streams_response[:data] : []
-    @castr_streams = CastrApiService.fetch_streams[:data] || { "docs" => [] }
-    @pistes = ShowCompetition.where.not(arena: [nil, ""]).distinct.pluck(:arena).map { |a| { label: a } }
+    @castr_streams = streams_response[:success] ? streams_response[:data] : { "docs" => [] }
+
+    # Liste des pistes/arenas
+    @pistes = ShowCompetition.where.not(arena: [nil, ""])
+                             .where(show_ID: @meeting.provider_competition_id)
+                             .distinct
+                             .pluck(:arena)
+                             .map { |a| { label: a } }
   end
 
   def start_stream
-    StreamRouterService.start(params[:stream_url], params[:competition_id])
-    redirect_to videos_admin_meeting_path(params[:id]), notice: "Stream lancé."
+    begin
+      StreamRouterService.start(params[:stream_url], params[:competition_id])
+      redirect_to videos_admin_meeting_path(params[:id]),
+                  notice: "Stream lancé avec succès."
+    rescue => e
+      Rails.logger.error "Start stream error: #{e.message}"
+      redirect_to videos_admin_meeting_path(params[:id]),
+                  alert: "Erreur lors du lancement du stream."
+    end
   end
 
   def stop_stream
-    StreamRouterService.stop(params[:stream_url])
-    redirect_to videos_admin_meeting_path(params[:id]), alert: "Stream arrêté."
+    begin
+      StreamRouterService.stop(params[:stream_url])
+      redirect_to videos_admin_meeting_path(params[:id]),
+                  notice: "Stream arrêté avec succès."
+    rescue => e
+      Rails.logger.error "Stop stream error: #{e.message}"
+      redirect_to videos_admin_meeting_path(params[:id]),
+                  alert: "Erreur lors de l'arrêt du stream."
+    end
   end
 
   def import_startlist
-    count = EquipeImportService.import_startlist(params[:competition_id])
-    redirect_to videos_admin_meeting_path(params[:id]), notice: "#{count} cavaliers importés."
+    class_id = params[:competition_id]
+
+    begin
+      service = EquipeImportService.new(@meeting)
+      result = service.import_startlist(class_id)
+
+      if result[:success]
+        redirect_to videos_admin_meeting_path(params[:id]),
+                    notice: result[:message]
+      else
+        redirect_to videos_admin_meeting_path(params[:id]),
+                    alert: "Erreur d'import : #{result[:error]}"
+      end
+    rescue => e
+      Rails.logger.error "Import startlist error: #{e.message}"
+      redirect_to videos_admin_meeting_path(params[:id]),
+                  alert: "Erreur technique lors de l'import de la liste de départs"
+    end
   end
 
+  private
+
   def set_meeting
-    @meeting = Competition.find(params[:id]) # ou Meeting.find(params[:id]) selon ton modèle
+    @meeting = Competition.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    redirect_to admin_dashboard_path, alert: "Meeting introuvable"
   end
 end
