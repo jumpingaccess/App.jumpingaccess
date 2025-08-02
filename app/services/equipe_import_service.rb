@@ -156,16 +156,7 @@ class EquipeImportService
   # === Méthodes de validation et recherche ===
 
   def valid_competition?(data)
-    Rails.logger.debug "Competition validation: z=#{data['z']}, klass=#{data['klass']}, feiid=#{data['feiid']}"
-
-    valid_types = ['H', 'P']
-    is_valid = valid_types.include?(data['z']) &&
-               data['klass'] != 'Do not compete' &&
-               data['klass'].present? &&
-               data['feiid'].present?
-
-    Rails.logger.debug "Is valid: #{is_valid}"
-    is_valid
+    data['z'] == 'H' && data['klass'] != 'Do not compete'
   end
 
   def find_or_initialize_competition(data)
@@ -194,25 +185,18 @@ class EquipeImportService
 
   def update_competition_attributes(show_competition, data)
     show_competition.assign_attributes(
-      equipe_show_id: @competition.id,
-      datum: parse_date(data['datum']) || Date.current,
-      class_num: data['clabb'] || '',
-      class_name: sanitize_text(data['klass']) || '',
-      Headtitle: sanitize_text(data['oeverskr1']) || '',
-      subtitle: sanitize_text(data['oeverskr1']) || '',
+      datum: parse_date(data['datum']),
+      class_num: data['clabb'],
+      class_name: sanitize_text(data['klass']),
+      Headtitle: sanitize_text(data['oeverskr1']),
+      subtitle: sanitize_text(data['oeverskr1']),
       start_time: data['klock'],
-      arena: sanitize_text(data['tavlingspl']) || '',
-      Currency: data['premie_curr'] || '',  # ← Currency avec C majuscule
+      arena: sanitize_text(data['tavlingspl']),
+      Currency: data['premie_curr'],
       FEI_ID_Class: data['feiid']
     )
 
-    if show_competition.save
-      Rails.logger.debug "Competition #{show_competition.new_record? ? 'created' : 'updated'}: #{show_competition.class_ID}"
-      true
-    else
-      Rails.logger.error "Failed to save competition: #{show_competition.errors.full_messages}"
-      false
-    end
+    show_competition.save
   end
 
   def update_horse_attributes(horse, data)
@@ -258,22 +242,12 @@ class EquipeImportService
   end
 
   def success_response(created, updated, type)
-    message = if created > 0 && updated > 0
-                "#{created + updated} #{type} importé(s) : #{created} créé(s), #{updated} mis à jour"
-              elsif created > 0
-                "#{created} #{type} créé(s)"
-              elsif updated > 0
-                "#{updated} #{type} mis à jour"
-              else
-                "Aucune #{type} à importer"
-              end
-
     {
       success: true,
       created: created,
       updated: updated,
       total: created + updated,
-      message: message
+      message: "#{created + updated} #{type} importé(s) : #{created} créé(s), #{updated} mis à jour"
     }
   end
 

@@ -86,7 +86,7 @@ class Admin::CompetitionsController < ApplicationController
       :name, :location, :start_date, :end_date,
       :timezone, :fei_id, :logo, :public_enabled, :rabbitmq_enabled,
       :ftp_enabled, :ftp_host, :ftp_port, :ftp_user, :ftp_password, :ftp_path,
-      :s3_enabled, :s3_bucket, :s3_region, :s3_access_key, :s3_secret_key, :country, :provider, :provider_competition_id,:enable_queue, :ffmpeg_quere_enabled
+      :s3_enabled, :s3_bucket, :s3_region, :s3_access_key, :s3_secret_key, :country, :provider, :provider_competition_id, :ffmpeg_quere_enabled
     )
   end
 end

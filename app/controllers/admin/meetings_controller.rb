@@ -12,20 +12,14 @@ class Admin::MeetingsController < ApplicationController
   def classimport
     competition = Competition.find(params[:id])
 
-    Rails.logger.debug "=== DÉBUT IMPORT CLASSES ==="
-
     begin
       service = EquipeImportService.new(competition)
       result = service.import_classes
 
-      Rails.logger.debug "Résultat du service: #{result.inspect}"
-
       if result[:success]
-        Rails.logger.debug "Import réussi, message: #{result[:message]}"
         redirect_to admin_meeting_path(competition.id),
                     notice: result[:message]
       else
-        Rails.logger.debug "Import échoué, erreur: #{result[:error]}"
         redirect_to admin_meeting_path(competition.id),
                     alert: "Erreur d'import : #{result[:error]}"
       end
@@ -35,6 +29,7 @@ class Admin::MeetingsController < ApplicationController
                   alert: "Erreur technique lors de l'import des épreuves"
     end
   end
+
   # ✅ Méthode simplifiée avec le nouveau service
   def horseimport
     competition = Competition.find(params[:id])

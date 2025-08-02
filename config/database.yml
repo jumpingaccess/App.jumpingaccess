@@ -6,7 +6,7 @@ default: &default
   username: <%= ENV.fetch("DATABASE_USERNAME", "jaccess") %>
   password: <%= ENV.fetch("DATABASE_PASSWORD") %>
   host: <%= ENV.fetch("DATABASE_HOST", "localhost") %>
-  socket: /var/run/mysqld/mysqld.sock  
+  socket: /var/lib/mysql/mysql.sock
 
 development:
   <<: *default
